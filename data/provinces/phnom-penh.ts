@@ -10,7 +10,7 @@ export const phnomPenhData: ProvinceData = {
     { developer: "បុរី ពិភពថ្មី (Borey Piphup Thmey)", project: "ផ្លូវជាតិលេខ ៣ (National Road 3)", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌពោធិ៍សែនជ័យ", locationNote: "Pong Tuek / Chaom Chau", marketValue: 400, baseValue: 100 },
     { developer: "បុរី ពិភពថ្មី (Borey Piphup Thmey)", project: "កួរស្រូវ (Kour Srov) - ផ្លូវជាតិលេខ ២", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌដង្កោ", locationNote: "Roluos (Dangkao)", marketValue: 350, baseValue: 50 },
     { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "បឹងស្នោ (The Star Platinum) - ផ្លូវជាតិលេខ ១", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌច្បារអំពៅ", locationNote: "Niroth (Chbar Ampov)", marketValue: 1500, baseValue: 450 },
-    { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "ដឹស្តារ ព្រីមៀរ៍/ឡៃត៍ (Premier/Light) - ផ្លូវ ៥៩៨", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌឫស្សីកែវ", locationNote: "Chrang Chamreh", marketValue: 1100, baseValue: 300 },
+    { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "ដឹស្តារ ព្រីមៀរ៍/ឡៃត៍ (Premier/Light) - ផ្លូវ ៥៩៨", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌឫស្សីកែវ", locationNote: "Chrang Chamreh", marketValue: 1100, baseValue: 450 },
     { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "ដឹស្តារ ម៉េរាហ្គាដិន (Mera Garden) - ផ្លូវ ៥០ម៉ែត្រ", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌដង្កោ", locationNote: "Cheung Ek / Dangkao", marketValue: 800, baseValue: 150 },
     { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "ដឹស្តារ ជូមីរ៉ា (Jumeirah) - ផ្លូវ ៦អា", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌជ្រោយចង្វារ", locationNote: "Chroy Changvar", marketValue: 900, baseValue: 200 },
     { developer: "បុរី ប៉េងហួត (Borey Peng Huoth)", project: "ដឹស្តារ ណេតឆឺរ៉ល (Natural) - ផ្លូវ ៣៧១", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌមានជ័យ", locationNote: "Chak Angre", marketValue: 1000, baseValue: 250 },
@@ -43,26 +43,28 @@ export const phnomPenhData: ProvinceData = {
     { developer: "បុរី រិទ្ធ (Borey Rith)", project: "ឫស្សីកែវ (Russey Keo)", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌឫស្សីកែវ", locationNote: "Russey Keo", marketValue: 700, baseValue: 200 },
     { developer: "បុរី ហាយតិច (Borey High Tech)", project: "ច្បារអំពៅ (Chbar Ampov)", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌច្បារអំពៅ", locationNote: "Niroth", marketValue: 900, baseValue: 250 },
     { developer: "បុរី វិបុលសុខ (Borey Vibol Sok)", project: "២០០៤ (St. 2004)", province: "រាជធានីភ្នំពេញ", district: "ខណ្ឌសែនសុខ", locationNote: "Sen Sok", marketValue: 850, baseValue: 250 },
+    { developer: "Borey SN", project: "DangKao", province: "រាជធានីភ្នំពេញ", district: "ដង្កោ", locationNote: "ភូមិរោលជ្រូក សង្កាត់ព្រៃវែង", marketValue: 250, baseValue: 250 },
+    { developer: "បុរីជារី", project: "ចោមចៅទី២", province: "រាជធានីភ្នំពេញ", district: "ពោធិ៍សែនជ័យ", locationNote: "ភូមិព្រៃព្រីងខាងត្បូង២ សង្កាត់ចោមចៅទី២", marketValue: 250, baseValue: 250 },
   ],
   zones: [
     {
-        name: "តំបន់ I (ដូនពេញ, ៧មករា, ចំការមន, ទួលគោក)",
-        types: [
-            { id: "t1_main", label: "ផ្លូវមេពាណិជ្ជកម្ម (Commercial)", desc: "មហាវិថីព្រះមុនីវង្ស, នរោត្តម, សីហនុ...", price: 4500 },
-            { id: "t1_sub", label: "ផ្លូវរណប (Sub-Road)", desc: "ផ្លូវបំបែកពីផ្លូវមេ", price: 2500 },
-            { id: "t2_main", label: "ជុំវិញផ្សារធំៗ", desc: "ផ្សារថ្មី, អូឡាំពិក, អូរឫស្សី", price: 4000 },
-            { id: "t3_main", label: "ផ្លូវមេ (Residential)", desc: "ម៉ៅសេទុង, មុនីរ៉េត, ឆាលដឺហ្គោល", price: 3500 },
-            { id: "t_alley", label: "ច្រកផ្លូវ (Alley)", desc: "ផ្លូវតូច/ផ្លូវលំក្នុងសង្កាត់", price: 1500 }
-        ]
+      name: "តំបន់ I (ដូនពេញ, ៧មករា, ចំការមន, ទួលគោក)",
+      types: [
+        { id: "t1_main", label: "ផ្លូវមេពាណិជ្ជកម្ម (Commercial)", desc: "មហាវិថីព្រះមុនីវង្ស, នរោត្តម, សីហនុ...", price: 4500 },
+        { id: "t1_sub", label: "ផ្លូវរណប (Sub-Road)", desc: "ផ្លូវបំបែកពីផ្លូវមេ", price: 2500 },
+        { id: "t2_main", label: "ជុំវិញផ្សារធំៗ", desc: "ផ្សារថ្មី, អូឡាំពិក, អូរឫស្សី", price: 4000 },
+        { id: "t3_main", label: "ផ្លូវមេ (Residential)", desc: "ម៉ៅសេទុង, មុនីរ៉េត, ឆាលដឺហ្គោល", price: 3500 },
+        { id: "t_alley", label: "ច្រកផ្លូវ (Alley)", desc: "ផ្លូវតូច/ផ្លូវលំក្នុងសង្កាត់", price: 1500 }
+      ]
     },
     {
-        name: "តំបន់ II (Outer Districts)",
-        types: [
-            { id: "t1_main", label: "ផ្លូវមេភ្ជាប់ក្រុង", desc: "ផ្លូវហាណូយ, ណតប្រ៊ីដ, វេងស្រេង", price: 1500 },
-            { id: "t2_main", label: "ជុំវិញផ្សារជាយក្រុង", desc: "ផ្សារទឹកថ្លា, សេនជូរី, ស្ទឹងមានជ័យ", price: 1000 },
-            { id: "t3_main", label: "ផ្លូវមេ & បុរីធំៗ", desc: "ម៉ុងឫទ្ធី, ជាសុផារ៉ា", price: 750 },
-            { id: "t4_main", label: "ផ្លូវជាតិ (National Rd)", desc: "ផ្លូវជាតិលេខ ១, ២, ៣, ៤, ៥", price: 350 }
-        ]
+      name: "តំបន់ II (Outer Districts)",
+      types: [
+        { id: "t1_main", label: "ផ្លូវមេភ្ជាប់ក្រុង", desc: "ផ្លូវហាណូយ, ណតប្រ៊ីដ, វេងស្រេង", price: 1500 },
+        { id: "t2_main", label: "ជុំវិញផ្សារជាយក្រុង", desc: "ផ្សារទឹកថ្លា, សេនជូរី, ស្ទឹងមានជ័យ", price: 1000 },
+        { id: "t3_main", label: "ផ្លូវមេ & បុរីធំៗ", desc: "ម៉ុងឫទ្ធី, ជាសុផារ៉ា", price: 750 },
+        { id: "t4_main", label: "ផ្លូវជាតិ (National Rd)", desc: "ផ្លូវជាតិលេខ ១, ២, ៣, ៤, ៥", price: 350 }
+      ]
     }
   ],
 };

@@ -1,0 +1,77 @@
+/* Custom styles for Ultra Tax Calculator */
+/* Ensure body takes full height */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+/* Hide overflow for locked screens */
+body.locked {
+  overflow: hidden;
+}
+/* Print-specific styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 5mm;
+  }
+  html, body {
+    width: 100%;
+    height: auto;
+    background: white !important;
+    /* Remove forced scaling; let content dictate height */
+    transform: none;
+    transform-origin: top left;
+    font-size: 92%;
+    min-height: 0;
+  }
+  #output-section {
+    /* Allow content to expand to fill page, no max‑height */
+    max-height: none;
+    page-break-inside: auto;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-section { break-inside: avoid; }
+  /* Additional dynamic print rules */
+  /* Reduce top margin for main container */
+  .mt-8 { margin-top: 0.5rem !important; }
+  /* Reduce padding in sections */
+  .p-8 { padding: 0.5rem !important; }
+  .p-4 { padding: 0.25rem !important; }
+  /* Allow page breaks after sections */
+  .mt-8 { break-after: auto; }
+  #output-section { max-height: none; }
+  /* Table row break rule */
+  /* Table rows can break across pages */
+  /* Ensure table header repeats on each printed page */
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  /* The table wrapper and parent divs use overflow-hidden which prevents
+     the browser from repeating thead across pages. Override ALL of them. */
+  #output-section,
+  #output-section div {
+    overflow: visible !important;
+  }
+  #output-section table {
+    page-break-inside: auto;
+    border-collapse: collapse;
+  }
+  #output-section thead {
+    display: table-header-group !important;
+  }
+  #output-section tfoot {
+    display: table-footer-group !important;
+  }
+  #output-section thead tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #output-section tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+}

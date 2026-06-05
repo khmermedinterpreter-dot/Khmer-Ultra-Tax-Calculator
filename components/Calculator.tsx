@@ -37,7 +37,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ inputs, setInputs, onCal
     };
 
     const handlePrint = () => {
-        const isTauri = typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined;
+        const isTauri = typeof window !== 'undefined' && (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ !== undefined;
         if (isTauri) {
             invoke('print_window').catch(err => {
                 console.error("Tauri native print failed, falling back to window.print():", err);

@@ -89,33 +89,38 @@ export const calculateTax = (inputs: CalculationInputs, simYearEnd?: number): Ca
     };
 };
 
-export const exportToExcel = (inputs: CalculationInputs) => {
+export const exportToExcel = async (inputs: CalculationInputs): Promise<void> => {
     const wb = XLSX.utils.book_new();
     const yearlyTotals: { year: number; total: number }[] = [];
 
+    // Limit export years to a reasonable maximum (10) to avoid huge files
+    const maxExportYears = 10;
+    const exportYears = Math.min(inputs.exportYears, maxExportYears);
+    if (inputs.exportYears > maxExportYears) {
+        alert(`Export years limited to ${maxExportYears} for performance reasons.`);
+    }
+
     // Simulate future years
-    for (let i = 0; i < inputs.exportYears; i++) {
+    for (let i = 0; i < exportYears; i++) {
         const simulatedYear = inputs.yearEnd + i;
-        // Run calculation for this simulated year
         const result = calculateTax(inputs, simulatedYear);
-        
         yearlyTotals.push({ year: simulatedYear, total: result.grandTotal });
 
-        // Create detail table for this year sheet
         const detailData = [
             ["Year", "Base Tax", "Penalty (10%)", "Interest (1.5%)", "Total"],
             ...result.yearlyDetails.map(d => [
-                d.year, 
-                d.yearlyTax.toFixed(2), 
-                d.fine.toFixed(2), 
-                d.interest.toFixed(2), 
+                d.year,
+                d.yearlyTax.toFixed(2),
+                d.fine.toFixed(2),
+                d.interest.toFixed(2),
                 d.total.toFixed(2)
             ]),
             ["", "", "", "Grand Total:", result.totalPaid.toFixed(2)]
         ];
-        
         const sheet = XLSX.utils.aoa_to_sheet(detailData);
-        XLSX.utils.book_append_sheet(wb, sheet, `${simulatedYear}`);
+        // Ensure unique sheet name even if simulatedYear repeats (unlikely)
+        const sheetName = `${simulatedYear}`;
+        XLSX.utils.book_append_sheet(wb, sheet, sheetName);
     }
 
     // Summary Sheet
@@ -131,17 +136,13 @@ export const exportToExcel = (inputs: CalculationInputs) => {
     if (isTauri) {
         try {
             const base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-            invoke('save_excel_file', { base64Data, filename: "Ultra_Tax_Report.xlsx" })
-                .then(path => console.log("File saved to:", path))
-                .catch(err => {
-                    console.error("Error saving file in Tauri:", err);
-                    if (err !== "User cancelled the save dialog") {
-                        alert("Failed to export Excel: " + err);
-                    }
-                });
+            await invoke('save_excel_file', { base64_data: base64Data, filename: "Ultra_Tax_Report.xlsx" });
+            console.log("File saved via Tauri");
         } catch (err) {
-            console.error("Failed to generate excel file base64:", err);
-            alert("Failed to generate Excel file.");
+            console.error("Error saving file in Tauri:", err);
+            if (err !== "User cancelled the save dialog") {
+                alert("Failed to export Excel: " + err);
+            }
         }
     } else {
         XLSX.writeFile(wb, "Ultra_Tax_Report.xlsx");

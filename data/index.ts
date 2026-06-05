@@ -1,3 +1,4 @@
+// Data module for borey management with persistence
 import { Database, FlatVillage, Borey } from '../types';
 import { phnomPenhData } from './provinces/phnom-penh';
 import { kandalData } from './provinces/kandal';
@@ -7,34 +8,62 @@ import { kampongSpeuData } from './provinces/kampong-speu';
 import { kampongChhnangData } from './provinces/kampong-chhnang';
 import { kampongChamData } from './provinces/kampong-cham';
 import { battambangData } from './provinces/battambang';
-
-// The master database, structured by province name
-// FIX: The original dynamic key logic was causing TypeScript errors and was overly complex.
-// It has been replaced with static province names for clarity and correctness.
+import { preyVengData } from './provinces/prey-veng';
+import { pursatData } from './provinces/pursat';
+import { stungTrengData } from './provinces/stung-treng';
+import { svayRiengData } from './provinces/svay-rieng';
+import { tbongKhmumData } from './provinces/tbong-khmum';
+import { pailinData } from './provinces/pailin';
+import { takeoData } from './provinces/takeo';
+import { ratanakiriData } from './provinces/ratanakiri';
+import { preahVihearData } from './provinces/preah-vihear';
+import { kepData } from './provinces/kep';
+import { kohKongData } from './provinces/koh-kong';
+import { mondulkiriData } from './provinces/mondulkiri';
+import { siemReapData } from './provinces/siem-reap';
+import { banteayMeancheyData } from './provinces/banteay-meanchey';
+import { kampongThomData } from './provinces/kampong-thom';
+import { oddarMeancheyData } from './provinces/oddar-meanchey';
+import { kratieData } from './provinces/kratie';
+// Master database (static data)
 export const database: Database = {
   "រាជធានីភ្នំពេញ": phnomPenhData,
-  "ខេត្តកណ្តាល": kandalData,
-  "ខេត្តព្រះសីហនុ": sihanoukvilleData,
-  "ខេត្តកំពត": kampotData,
-  "ខេត្តកំពង់ស្ពឺ": kampongSpeuData,
-  "ខេត្តកំពង់ឆ្នាំង": kampongChhnangData,
-  "ខេត្តកំពង់ចាម": kampongChamData,
+  "ខេត្តបន្ទាយមានជ័យ": banteayMeancheyData,
   "ខេត្តបាត់ដំបង": battambangData,
-  // To add a new province, import it and add it here.
+  "ខេត្តកំពង់ចាម": kampongChamData,
+  "ខេត្តកំពង់ឆ្នាំង": kampongChhnangData,
+  "ខេត្តកំពង់ស្ពឺ": kampongSpeuData,
+  "ខេត្តកំពង់ធំ": kampongThomData,
+  "ខេត្តកំពត": kampotData,
+  "ខេត្តកណ្តាល": kandalData,
+  "ខេត្តកែប": kepData,
+  "ខេត្តកោះកុង": kohKongData,
+  "ខេត្តក្រចេះ": kratieData,
+  "ខេត្តមណ្ឌលគិរី": mondulkiriData,
+  "ខេត្តឧត្តរមានជ័យ": oddarMeancheyData,
+  "ខេត្តប៉ៃលិន": pailinData,
+  "ខេត្តព្រះវិហារ": preahVihearData,
+  "ខេត្តព្រៃវែង": preyVengData,
+  "ខេត្តពោធិ៍សាត់": pursatData,
+  "ខេត្តរតនគិរី": ratanakiriData,
+  "ខេត្តសៀមរាប": siemReapData,
+  "ខេត្តព្រះសីហនុ": sihanoukvilleData,
+  "ខេត្តស្ទឹងត្រែង": stungTrengData,
+  "ខេត្តស្វាយរៀង": svayRiengData,
+  "ខេត្តតាកែវ": takeoData,
+"ខេត្តត្បងឃ្មុំ": tbongKhmumData,
 };
 
-// --- Pre-processed flat lists for efficient searching in the UI ---
-
-// Flattened list of all villages from all provinces
+// Pre‑processed flat list of all villages
 export const flatVillageList: FlatVillage[] = Object.values(database).flatMap(provinceData => {
-  const provinceName = Object.keys(provinceData.villages)[0];
-  const districts = provinceData.villages[provinceName];
-  
+  const provinceNames = Object.keys(provinceData.villages);
+  if (provinceNames.length === 0) return [];
+  const provinceName = provinceNames[0];
+  const districts = provinceData.villages[provinceName] ?? {};
   return Object.keys(districts).flatMap(districtName => {
-    // FIX: The `_provinceName` property is no longer added, so the conditional check for it has been removed.
-    const communes = districts[districtName];
+    const communes = districts[districtName] ?? {};
     return Object.keys(communes).flatMap(communeName => {
-      const villages = communes[communeName];
+      const villages = communes[communeName] ?? {};
       return Object.keys(villages).map(villageName => ({
         province: provinceName,
         district: districtName,
@@ -46,19 +75,74 @@ export const flatVillageList: FlatVillage[] = Object.values(database).flatMap(pr
   });
 });
 
+// -------------------------------------------------------------------
+// Borey data – built from the static database on startup
+// -------------------------------------------------------------------
+export let flatBoreyList: Borey[] = Object.values(database).flatMap(p => p.boreys ?? []);
 
-// Flattened list of all boreys from all provinces
-export const flatBoreyList: Borey[] = Object.values(database).flatMap(provinceData => provinceData.boreys);
+// Grouped map of boreys by developer for UI dropdowns
+export const boreyDeveloperMap: { [developer: string]: Borey[] } = {};
 
-// Create a grouped map of boreys by developer for the UI dropdown
-export const boreyDeveloperMap = flatBoreyList.reduce((acc, borey) => {
-  if (!acc[borey.developer]) {
-    acc[borey.developer] = [];
+function rebuildBoreyDeveloperMap(): void {
+  for (const key in boreyDeveloperMap) delete boreyDeveloperMap[key];
+  flatBoreyList.forEach(b => {
+    if (!boreyDeveloperMap[b.developer]) boreyDeveloperMap[b.developer] = [];
+    boreyDeveloperMap[b.developer].push(b);
+  });
+}
+
+// Initialise map on load
+rebuildBoreyDeveloperMap();
+
+// -------------------------------------------------------------------
+// CRUD – updates in-memory state AND writes to the TS source file
+// via the Vite dev-server API plugin (/api/borey/add, /api/borey/delete)
+// -------------------------------------------------------------------
+
+/**
+ * Write a Borey change to the source TypeScript file through the
+ * Vite dev-server middleware exposed by plugins/borey-api.ts.
+ */
+async function persistToFile(action: 'add' | 'delete', borey: Borey): Promise<void> {
+  try {
+    const res = await fetch(`/api/borey/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(borey),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      console.error(`[borey-persist] ${action} failed:`, result.error);
+    } else {
+      console.log(`[borey-persist] ${action} success:`, result);
+    }
+  } catch (err) {
+    console.error(`[borey-persist] ${action} network error:`, err);
   }
-  acc[borey.developer].push(borey);
-  return acc;
-}, {} as { [developer: string]: Borey[] });
+}
 
+export function deleteBorey(borey: Borey): void {
+  const idx = flatBoreyList.findIndex(
+    b => b.project === borey.project && b.province === borey.province && b.district === borey.district
+  );
+  if (idx !== -1) {
+    flatBoreyList.splice(idx, 1);
+    rebuildBoreyDeveloperMap();
+    // Write change to the actual TS source file
+    persistToFile('delete', borey);
+  }
+}
 
-// FIX: Removed problematic logic that was adding a `_provinceName` property at runtime.
-// This property was added after the `database` object was initialized, which caused the errors.
+export function addOrUpdateBorey(borey: Borey): void {
+  const existingIndex = flatBoreyList.findIndex(
+    b => b.project === borey.project && b.province === borey.province && b.district === borey.district
+  );
+  if (existingIndex !== -1) {
+    flatBoreyList[existingIndex] = borey;
+  } else {
+    flatBoreyList.push(borey);
+  }
+  rebuildBoreyDeveloperMap();
+  // Write change to the actual TS source file
+  persistToFile('add', borey);
+}

@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { database, flatVillageList, boreyDeveloperMap } from '../data/index';
+import { database, flatVillageList, boreyDeveloperMap, addOrUpdateBorey, deleteBorey } from '../data/index';
 import { FlatVillage, Borey, ZoneData, ZoneType } from '../types';
-import { MapPin, Home, Map, Search, ChevronRight, X, Globe } from 'lucide-react';
+import { MapPin, Home, Map, Search, ChevronRight, X, Globe, Info, Plus, Edit, Trash2, Settings } from 'lucide-react';
 import { MapView } from './MapView';
+import { BoreyForm } from './BoreyForm';
 
 interface LookupProps {
     onSelectPrice: (market: number, base: number) => void;
@@ -35,6 +36,12 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
     const [selectedZone, setSelectedZone] = useState('');
     const [selectedZoneType, setSelectedZoneType] = useState('');
     const [selectedBoreyProject, setSelectedBoreyProject] = useState('');
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    // Modal state for Borey add/edit
+    const [isBoreyModalOpen, setIsBoreyModalOpen] = useState(false);
+    const [boreyFormMode, setBoreyFormMode] = useState<'add' | 'edit'>('add');
+    const [editBoreyData, setEditBoreyData] = useState<Borey | undefined>(undefined);
+    const [showBoreyActions, setShowBoreyActions] = useState(false);
     
     // --- UI State ---
     const [villageSearchQuery, setVillageSearchQuery] = useState('');
@@ -63,12 +70,9 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
           ].sort()
         : Object.keys(boreyDeveloperMap).sort();
 
-    const availableBoreyProjects: Borey[] = useMemo(() => boreyDeveloper 
-        ? (province 
-            ? (boreyDeveloperMap[boreyDeveloper] || []).filter(p => p.province === province)
-            : boreyDeveloperMap[boreyDeveloper] || []
-          )
-        : [], [boreyDeveloper, province]);
+    const availableBoreyProjects: Borey[] = boreyDeveloper
+    ? (boreyDeveloperMap[boreyDeveloper] || []).filter(p => !province || p.province === province)
+    : [];
 
     const availableZones: ZoneData[] = useMemo(() => province ? database[province]?.zones || [] : [], [province]);
     const availableZoneTypes: ZoneType[] = useMemo(() => availableZones.find(z => z.name === selectedZone)?.types || [], [availableZones, selectedZone]);
@@ -166,6 +170,36 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
     const handleZoneTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedZoneType(e.target.value);
     };
+
+    // --- Borey Add/Edit Handlers ---
+    const handleAddBorey = () => {
+        setBoreyFormMode('add');
+        setEditBoreyData(undefined);
+        setIsBoreyModalOpen(true);
+    };
+    const handleEditBorey = () => {
+        if (!selectedBoreyProject) return;
+        const borey = availableBoreyProjects.find(p => p.project === selectedBoreyProject);
+        if (borey) {
+            setEditBoreyData(borey);
+            setBoreyFormMode('edit');
+            setIsBoreyModalOpen(true);
+        }
+    };
+
+    const handleDeleteBorey = () => {
+        if (!selectedBoreyProject) return;
+        const borey = availableBoreyProjects.find(p => p.project === selectedBoreyProject);
+        if (borey && confirm(`Are you sure you want to delete "${borey.project}" by ${borey.developer}? This cannot be undone.`)) {
+            deleteBorey(borey);
+            setSelectedBoreyProject('');
+            // If no more projects for this developer, reset developer too
+            const remaining = (boreyDeveloperMap[borey.developer] || []).filter(p => !province || p.province === province);
+            if (remaining.length === 0) {
+                setBoreyDeveloper('');
+            }
+        }
+    };
     
     const handleVillageSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value;
@@ -202,12 +236,17 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
     const tabInactiveClass = "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50";
     const selectClass = "w-full px-4 py-3 bg-white text-slate-900 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm disabled:bg-slate-100 disabled:text-slate-400 font-medium appearance-none";
 
-    return (
+    return (<>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             <div className="p-6 border-b border-slate-100 bg-white">
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                    <div className="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-lg shadow-sm text-sm font-bold">1</div>
-                    ស្វែងរកតម្លៃដី (Land Value Lookup)
+                <h3 className="text-xl font-bold text-slate-900 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-lg shadow-sm text-sm font-bold">1</div>
+                        ស្វែងរកតម្លៃដី (Land Value Lookup)
+                    </div>
+                    <button onClick={() => setIsInfoModalOpen(true)} className="text-slate-400 hover:text-blue-600 transition-colors">
+                        <Info size={20} />
+                    </button>
                 </h3>
             </div>
             <div className="flex border-b border-slate-200 bg-white">
@@ -227,7 +266,14 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
                                 <SelectWrapper>
                                     <select className={selectClass} onChange={handleProvinceChange} value={province}>
                                         <option value="">-- គ្រប់ខេត្ត/ក្រុង --</option>
-                                        {Object.keys(database).map(p => <option key={p} value={p}>{p}</option>)}
+                                        {Object.entries(database).map(([p, d]) => {
+  const hasData = Object.keys(d.villages || {}).length > 0;
+  return (
+    <option key={p} value={p} style={{ color: hasData ? undefined : 'red' }}>
+      {p}{hasData ? '' : ' (No data)'}
+    </option>
+  );
+})}
                                     </select>
                                 </SelectWrapper>
                             </div>
@@ -253,6 +299,39 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
                                 </SelectWrapper>
                             </div>
                         </>)}
+                        {/* Manage Borey Toggle */}
+                        {activeTab === 'borey' && (
+                          <div className="col-span-1 md:col-span-2 mt-1">
+                            <button
+                              onClick={() => setShowBoreyActions(!showBoreyActions)}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                showBoreyActions
+                                  ? 'bg-slate-800 text-white shadow-md'
+                                  : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                              }`}
+                            >
+                              <Settings size={16} className={`transition-transform duration-300 ${showBoreyActions ? 'rotate-90' : ''}`} />
+                              Manage Borey
+                            </button>
+                            {showBoreyActions && (
+                              <div className="flex flex-wrap gap-2 mt-3 animate-fade-in">
+                                <button onClick={handleAddBorey} className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
+                                  <Plus size={16} /> Add Borey
+                                </button>
+                                {selectedBoreyProject && (
+                                  <button onClick={handleEditBorey} className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
+                                    <Edit size={16} /> Edit Borey
+                                  </button>
+                                )}
+                                {selectedBoreyProject && (
+                                  <button onClick={handleDeleteBorey} className="flex items-center gap-1.5 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95">
+                                    <Trash2 size={16} /> Delete Borey
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {activeTab === 'village' && (<>
                             <div className="col-span-1 md:col-span-2">
@@ -280,7 +359,14 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
                                 <SelectWrapper>
                                     <select className={selectClass} onChange={handleProvinceChange} value={province}>
                                         <option value="">-- ជ្រើសរើស --</option>
-                                        {Object.keys(database).map(p => <option key={p} value={p}>{p}</option>)}
+                                         {Object.entries(database).map(([p, d]) => {
+                                           const hasData = Object.keys(d.villages || {}).length > 0;
+                                           return (
+                                             <option key={p} value={p} style={{ color: hasData ? undefined : 'red' }}>
+                                               {p}{hasData ? '' : ' (No data)'}
+                                             </option>
+                                           );
+                                         })}
                                     </select>
                                 </SelectWrapper>
                             </div>
@@ -343,5 +429,20 @@ export const LookupSection: React.FC<LookupProps> = ({ onSelectPrice }) => {
                 )}
             </div>
         </div>
-    );
+{isBoreyModalOpen && (
+  <BoreyForm
+    mode={boreyFormMode}
+    initialData={editBoreyData}
+    onSubmit={(borey) => {
+      addOrUpdateBorey(borey);
+      setIsBoreyModalOpen(false);
+      setEditBoreyData(undefined);
+    }}
+    onCancel={() => {
+      setIsBoreyModalOpen(false);
+      setEditBoreyData(undefined);
+    }}
+  />
+)}
+</>);
 };

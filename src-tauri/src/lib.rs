@@ -4,9 +4,17 @@ use std::io::Write;
 
 #[tauri::command]
 fn save_excel_file(base64_data: String, filename: String) -> Result<String, String> {
+        // Guard against excessively large payloads (limit ~10 MiB after decode)
+    const MAX_DECODED_SIZE: usize = 10 * 1024 * 1024;
+    if base64_data.len() > MAX_DECODED_SIZE * 2 { // rough upper bound before decode
+        return Err("Base64 payload is too large".to_string());
+    }
     let bytes = general_purpose::STANDARD
         .decode(base64_data)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
+    if bytes.len() > MAX_DECODED_SIZE {
+        return Err("Decoded file exceeds size limit".to_string());
+    }
 
     let file_path = rfd::FileDialog::new()
         .set_file_name(&filename)
@@ -27,6 +35,7 @@ fn save_excel_file(base64_data: String, filename: String) -> Result<String, Stri
 #[tauri::command]
 fn print_window(window: tauri::WebviewWindow) -> Result<(), String> {
     window.print().map_err(|e| e.to_string())
+
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -19,16 +19,27 @@ export const Results: React.FC<ResultsProps> = ({ result, inputs }) => {
     // Serialize all the inputs into a JSON string for data portability
     const qrCodeValue = JSON.stringify(inputs);
 
-    return (
-        <div id="output-section" className="mt-8 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in print:shadow-none print:border-none print:mt-0">
-            {/* Header / Timestamp */}
-            <div className="bg-slate-900 text-white p-4 text-center print:hidden">
-                <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Calculation Timestamp</p>
-                <p className="font-mono text-sm">{result.timestamp}</p>
-            </div>
+    // For print: first page fits 18 rows (summary takes space), subsequent pages fit 32 rows each.
+    const FIRST_PAGE_ROWS = 17;
+    const NEXT_PAGE_ROWS = 32;
+    const printChunks: (typeof result.yearlyDetails)[] = [];
+    const rows = result.yearlyDetails;
+    if (rows.length > 0) {
+        printChunks.push(rows.slice(0, FIRST_PAGE_ROWS));
+        for (let i = FIRST_PAGE_ROWS; i < rows.length; i += NEXT_PAGE_ROWS) {
+            printChunks.push(rows.slice(i, i + NEXT_PAGE_ROWS));
+        }
+    }
 
-            <div className="p-8 print:p-2">
-                {/* Owner Info & Timestamp - only on print */}
+    return (
+        <div id="output-section" className="mt-8 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-visible animate-fade-in print:shadow-none print:border-none print:mt-0 print:overflow-visible">
+<div className="print:break-inside-avoid">
+  <div className="bg-slate-900 text-white p-4 text-center print:hidden">
+    <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Calculation Timestamp</p>
+    <p className="font-mono text-sm">{result.timestamp}</p>
+  </div>
+  <div className="p-8 print:p-2">
+    {/* Owner Info & Timestamp - only on print */}
                 <div className="hidden print:flex justify-between items-start border-b border-slate-300 mb-4 pb-4">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">Tax Report For: {inputs.ownerName || 'N/A'}</h2>
@@ -105,7 +116,10 @@ export const Results: React.FC<ResultsProps> = ({ result, inputs }) => {
                 </div>
 
                 {/* Yearly Details Table */}
-                <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm print:border-slate-300 print:shadow-none">
+                </div>
+              </div>
+              <div className="p-8 print:hidden">
+                <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm print:border-slate-300 print:shadow-none print:overflow-visible print:rounded-none">
                     <table className="w-full text-sm text-left print:text-xs">
                         <thead className="bg-slate-50 text-slate-900 print:bg-slate-100">
                             <tr>
@@ -154,6 +168,53 @@ export const Results: React.FC<ResultsProps> = ({ result, inputs }) => {
                     </table>
                 </div>
             </div>
+              {/* Print-only: Chunked tables with repeated headers for multi-page printing */}
+              <div className="hidden print:block print:p-2">
+                  {printChunks.map((chunk, chunkIndex) => (
+                      <table key={chunkIndex} className="w-full text-xs text-left border border-slate-200" style={{ borderCollapse: 'collapse', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                          <thead className="bg-slate-100 text-slate-900">
+                              <tr>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-center">ល.រ</th>
+                                  <th className="p-2 font-bold border-b border-slate-200">ឆ្នាំ (Year)</th>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-center">ខែយឺត (Late)</th>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-right">ពន្ធ (Base)</th>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-right text-red-600">ពិន័យ (10%)</th>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-right text-red-600">ការប្រាក់ (1.5%)</th>
+                                  <th className="p-2 font-bold border-b border-slate-200 text-right">សរុប (Total)</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                              {chunk.map((row, rowIndex) => {
+                                  const globalIndex = printChunks.slice(0, chunkIndex).reduce((sum, c) => sum + c.length, 0) + rowIndex;
+                                  return (
+                                      <tr key={row.year}>
+                                          <td className="p-2 font-medium text-slate-700 text-center">{globalIndex + 1}</td>
+                                          <td className="p-2 font-medium text-slate-900">{row.year}</td>
+                                          <td className="p-2 text-center font-mono text-xs text-amber-600">
+                                              {row.monthsLate > 0 ? `${row.monthsLate}ខែ (${row.daysLate} ថ្ងៃ)` : '-'}
+                                          </td>
+                                          <td className="p-2 text-right text-slate-600 font-mono">${row.yearlyTax.toFixed(2)}</td>
+                                          <td className="p-2 text-right text-red-500 font-mono">${row.fine.toFixed(2)}</td>
+                                          <td className="p-2 text-right text-red-500 font-mono">${row.interest.toFixed(2)}</td>
+                                          <td className="p-2 text-right font-bold text-slate-900 font-mono bg-slate-100">${row.total.toFixed(2)}</td>
+                                      </tr>
+                                  );
+                              })}
+                          </tbody>
+                          {chunkIndex === printChunks.length - 1 && result.yearlyDetails.length > 0 && (
+                              <tfoot className="bg-slate-100">
+                                  <tr className="font-bold text-slate-900">
+                                      <td className="p-2 border-t-2 border-slate-200 text-right" colSpan={3}>សរុបរួម (Totals)</td>
+                                      <td className="p-2 border-t-2 border-slate-200 text-right font-mono">${totals.yearlyTax.toFixed(2)}</td>
+                                      <td className="p-2 border-t-2 border-slate-200 text-right font-mono text-red-600">${totals.fine.toFixed(2)}</td>
+                                      <td className="p-2 border-t-2 border-slate-200 text-right font-mono text-red-600">${totals.interest.toFixed(2)}</td>
+                                      <td className="p-2 border-t-2 border-slate-200 text-right font-mono bg-slate-200">${result.totalPaid.toFixed(2)}</td>
+                                  </tr>
+                              </tfoot>
+                          )}
+                      </table>
+                  ))}
+              </div>
         </div>
     );
 };
