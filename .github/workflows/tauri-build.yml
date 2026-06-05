@@ -45,33 +45,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            .github
-            components
-            data
-            plugins
-            scripts
-            src-tauri
-            App.tsx
-            authUtils.ts
-            data.ts
-            eslint.config.js
-            index.css
-            index.html
-            index.tsx
-            package.json
-            package-lock.json
-            tsconfig.json
-            types.ts
-            utils.ts
-            vite.config.ts
-            kampong-chhnang-data.ts
-            kampong-speu-data.ts
-            kampot-data.ts
-            kandal-data.ts
-            phnompenh-data.ts
-            sihanoukville-data.ts
 
       - name: Setup Node
         uses: actions/setup-node@v4
