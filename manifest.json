@@ -2,7 +2,7 @@
   "name": "Ultra Tax Calculator",
   "short_name": "UltraTax",
   "description": "ប្រព័ន្ធគណនាពន្ធអចលនទ្រព្យ - Cambodia Property Tax Calculator",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f172a",
