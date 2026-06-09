@@ -1,73 +1,91 @@
-// Ultra Tax Calculator - Service Worker
-const CACHE_NAME = 'ultra-tax-v1';
+// Ultra Tax Calculator - Service Worker (Offline-capable)
+const CACHE_NAME = 'ultra-tax-v2';
 
-// Assets to cache for offline use
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/manifest.json',
-];
-
-// Install event — cache core assets
+// Install event — cache the app shell on first visit
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      // Get the base path dynamically (works on both / and /Khmer-Ultra-Tax-Calculator/)
+      const scope = self.registration.scope;
+      
+      // Cache the main page and manifest
+      try {
+        // Use { cache: 'reload' } to ensure we get fresh copies
+        await cache.addAll([
+          scope,                    // e.g. /Khmer-Ultra-Tax-Calculator/
+          scope + 'manifest.json',
+          scope + 'icons/icon-192x192.png',
+          scope + 'icons/icon-512x512.png',
+        ]);
+        console.log('[SW] Core assets cached');
+      } catch (err) {
+        console.warn('[SW] Some assets failed to cache:', err);
+      }
+    })()
   );
-  // Activate immediately
   self.skipWaiting();
 });
 
-// Activate event — clean up old caches
+// Activate event — clean old caches and take control
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+    (async () => {
+      // Delete old caches
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       );
-    })
+      // Take control of all open tabs immediately
+      await self.clients.claim();
+      console.log('[SW] Activated and controlling all clients');
+    })()
   );
-  // Take control of all clients immediately
-  self.clients.claim();
 });
 
-// Fetch event — Network first, falling back to cache
+// Fetch event — Cache everything the app requests for full offline support
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
 
-  // Skip cross-origin requests (CDNs, APIs, etc.)
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  // Only handle GET requests
+  if (request.method !== 'GET') return;
 
+  // Strategy: Network First, then Cache (with aggressive caching)
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Clone the response before caching
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+
+      try {
+        // Try network first
+        const networkResponse = await fetch(request);
+        
+        // Cache successful responses (including CDN resources like Tailwind, fonts)
+        if (networkResponse.ok) {
+          cache.put(request, networkResponse.clone());
+        }
+        
         return networkResponse;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // If it's a navigation request, serve the cached index.html
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return new Response('Offline', { status: 503 });
+      } catch (err) {
+        // Network failed — serve from cache
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+          console.log('[SW] Serving from cache:', request.url);
+          return cachedResponse;
+        }
+
+        // For navigation requests, serve the cached main page
+        if (request.mode === 'navigate') {
+          const scope = self.registration.scope;
+          const fallback = await cache.match(scope);
+          if (fallback) return fallback;
+        }
+
+        return new Response('Offline — this resource is not cached', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' },
         });
-      })
+      }
+    })()
   );
 });
