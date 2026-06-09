@@ -12,8 +12,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="UltraTax" />
-    <link rel="manifest" href="/Khmer-Ultra-Tax-Calculator/manifest.json" />
-    <link rel="apple-touch-icon" href="/Khmer-Ultra-Tax-Calculator/icons/icon-192x192.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -91,7 +91,10 @@
     // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        // Use relative path so it works on GitHub Pages subdirectory
+        const base = document.querySelector('base')?.href || new URL('.', window.location.href).href;
+        const swUrl = new URL('sw.js', base).href;
+        navigator.serviceWorker.register(swUrl, { scope: base })
           .then((reg) => console.log('[PWA] Service Worker registered:', reg.scope))
           .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
       });
